@@ -55,7 +55,7 @@ class Caesar(Cipher):
         encrypt(text)
         decrypt(text)
     """
-    def __init__(self, b=0, a=1):
+    def __init__(self, b, a=1):
         """Each letter is encrypted to (b * L + a) % 26
         In the classic caesar cipher, a is set to 0
         """
@@ -120,6 +120,56 @@ divisible by 2 or 13")
         for letter in fixed_text:
             decrypted.append(chr((self.a_inv * (ord(letter) - A
                              - self.b)) % 26 + A))
+
+        return ''.join(decrypted)
+
+
+class VigenereError(CipherError):
+    """Vigenere Exception Class"""
+    def __init__(self, message):
+        super(VigenereError, self).__init__(message)
+
+
+class Vigenere(Cipher):
+    """Vigenere cipher class
+    Public Api:
+        set_parameters(**kwargs): sets password
+        encrypt(text)
+        decrypt(text)
+    """
+    def __init__(self, password):
+        super(Vigenere, self).__init__(password)
+        self.password = None
+        self.encryption_table = None
+        self.set_parameters(password=password)
+
+    def set_parameters(self, **kwargs):
+        """Possible parameters: password"""
+        for key, value in kwargs.iteritems():
+            if key == 'password':
+                self.password = re.sub('[^A-Z]', '', value.upper())
+                self.encryption_table = [
+                    Caesar(ord(i) - ord('A')) for i in self.password]
+
+    def encrypt(self, text):
+        """Encrypts text"""
+        fixed_text = re.sub('[^A-Z]', '', text.upper())
+        encrypted = []
+        length = len(self.encryption_table)
+
+        for i, letter in enumerate(fixed_text):
+            encrypted.append(self.encryption_table[i % length].encrypt(letter))
+
+        return ''.join(encrypted)
+
+    def decrypt(self, text):
+        """Decrypts text"""
+        fixed_text = re.sub('[^A-Z]', '', text.upper())
+        decrypted = []
+        length = len(self.encryption_table)
+
+        for i, letter in enumerate(fixed_text):
+            decrypted.append(self.encryption_table[i % length].decrypt(letter))
 
         return ''.join(decrypted)
 

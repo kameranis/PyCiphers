@@ -3,7 +3,8 @@ Library containing basic cipher implementations.
 
 Thus far I have added the following ciphers:
 1. (Affine) Caesar Cipher
-2. Playfair Cipher
+2. Vigenere Cipher
+3. Playfair Cipher
 
 Each cipher is called as
 ```
