@@ -3,11 +3,12 @@ Version:        1.0
 Date:           2015-07-13
 Description:    A Python implementation of various classic ciphers.
 Author:         Konstantinos Ameranis
-Licensing:      GPLv3.0
+Licensing:      MIT Licence
 """
 
 
 import re
+import utils
 
 
 class CipherError(Exception):
@@ -21,24 +22,20 @@ class CipherError(Exception):
 
 class Cipher(object):
     """Base Class for ciphers"""
-    def __init__(self, password):
+    def __init__(self):
         """Initializes Cipher Class"""
-        pass
+        raise NotImplementedError
 
     def encrypt(self, text):
         """Encrypts text
-        This is a dummy method"""
-        pass
+        Input: text as a stringi
+        """
+        raise NotImplementedError
 
     def decrypt(self, text):
         """Decrypts text
         This is a dummy method"""
-        pass
-
-    def set_parameters(self, password, **kwargs):
-        """Sets parameters for each cipher
-        This is a dummy method"""
-        pass
+        raise NotImplementedError
 
 
 class CaesarError(CipherError):
@@ -49,79 +46,70 @@ class CaesarError(CipherError):
 
 class Caesar(Cipher):
     """Caesar Cipher Class
+
     Public Api:
         Caesar(b, a)
         set_parameters(**kwargs)
         encrypt(text)
         decrypt(text)
     """
-    def __init__(self, b, a=1):
-        """Each letter is encrypted to (b * L + a) % 26
-        In the classic caesar cipher, a is set to 0
+    def __init__(self, offset, factor=1):
+        """Each letter is encrypted to (factor * L + offset) % 26
+
+        offset : int
+        factor : int
+        In the classic caesar cipher, a is set to 1
         """
-        super(Caesar, self).__init__((a, b))
-        self.a = None
-        self.b = None
-        self.a_inv = None
-        self.set_parameters(b=b, a=a)
-
-    def _extended_gcd(self, aa, bb):
-        """Extended Euclidean Algorithm"""
-        lastremainder, remainder = abs(aa), abs(bb)
-        x, lastx, y, lasty = 0, 1, 1, 0
-        while remainder:
-            lastremainder, (quotient, remainder) = \
-                remainder, divmod(lastremainder, remainder)
-            x, lastx = lastx - quotient*x, x
-            y, lasty = lasty - quotient*y, y
-        return lastremainder, lastx * (-1 if aa < 0 else 1), \
-            lasty * (-1 if bb < 0 else 1)
-
-    def _modinv(self, a, m):
-        """Computes the modular inverse of a mod m"""
-        g, x, _ = self._extended_gcd(a, m)
-        if g != 1:
-            raise ValueError
-        return x % m
-
-    def set_parameters(self, **kwargs):
-        """Possible parameters: a, b"""
-        for key, value in kwargs.iteritems():
-            if key == 'b':
-                self.b = value % 26
-            elif key == 'a':
-                if value % 2 == 0 or value % 13 == 0:
-                    raise CaesarError("'a' value must not be \
-divisible by 2 or 13")
-                self.a = value % 26
-                self.a_inv = self._modinv(value, 26)
-            else:
-                raise CaesarError('Unknown parameter ' + key + ' with value '
-                                  + value)
+        self.offset = offset % 26
+        if factor % 2 == 0 or factor % 13 == 0:
+            raise CaesarError("factor value must not be divisible by 2 or 13.")
+        self.factor = factor % 26
+        self.factor_inv = utils.modinv(factor, 26)
 
     def encrypt(self, text):
-        """Encrypts text"""
-        fixed_text = re.sub('[^A-Z]', '', text.upper())
-        encrypted = []
-        A = ord('A')
+        """Encrypts text
 
-        for letter in fixed_text:
-            encrypted.append(chr((self.a * (ord(letter) - A)
-                             + self.b) % 26 + A))
+        letter : character
+        """
+        def encrypt_letter(letter):
+            """Encypts a sinlge letter
 
-        return ''.join(encrypted)
+            letter : character
+            """
+            if len(letter) != 1:
+                raise CaesarError("Only a sigle character must be given.")
+            if not ord('A') <= ord(letter) <= ord('Z'):
+                raise CaesarError("""`letter` must be a capital letter.
+""" + letter + " is not a capital letter.")
+
+            A = ord('A')
+            return chr((self.factor *
+                        (ord(letter) - A) + self.offset) % 26 + A)
+
+        return ''.join([encrypt_letter(letter)
+                        for letter in utils.fix_text(text)])
 
     def decrypt(self, text):
-        """Decrypts text"""
-        fixed_text = re.sub('[^A-Z]', '', text.upper())
-        decrypted = []
-        A = ord('A')
+        """Decrypts text
 
-        for letter in fixed_text:
-            decrypted.append(chr((self.a_inv * (ord(letter) - A
-                             - self.b)) % 26 + A))
+        letter : character
+        """
+        def decrypt_letter(letter):
+            """Decrypts a single letter
 
-        return ''.join(decrypted)
+            letter : character
+            """
+            if len(letter) != 1:
+                raise CaesarError("Only a sigle character must be given.")
+            if not ord('A') <= ord(letter) <= ord('Z'):
+                raise CaesarError("`letter` must be a capital letter.")
+
+            A = ord('A')
+            return chr((self.factor_inv *
+                        (ord(letter) - A - self.offset)) % 26 + A)
+
+        return ''.join([decrypt_letter(letter)
+                        for letter in utils.fix_text(text)])
 
 
 class VigenereError(CipherError):
@@ -138,40 +126,61 @@ class Vigenere(Cipher):
         decrypt(text)
     """
     def __init__(self, password):
-        super(Vigenere, self).__init__(password)
-        self.password = None
-        self.encryption_table = None
-        self.set_parameters(password=password)
+        """Vigenere Cipher
 
-    def set_parameters(self, **kwargs):
-        """Possible parameters: password"""
-        for key, value in kwargs.iteritems():
-            if key == 'password':
-                self.password = re.sub('[^A-Z]', '', value.upper())
-                self.encryption_table = [
-                    Caesar(ord(i) - ord('A')) for i in self.password]
+        password : string
+        Non-Alpha characters are ignored
+        Case insensitive
+        """
+        self.password = utils.fix_text(password)
+        self.encryption_table = [
+            Caesar(ord(i) - ord('A')) for i in self.password]
 
     def encrypt(self, text):
-        """Encrypts text"""
-        fixed_text = re.sub('[^A-Z]', '', text.upper())
-        encrypted = []
+        """Encrypts text
+
+        text : string
+        """
         length = len(self.encryption_table)
 
-        for i, letter in enumerate(fixed_text):
-            encrypted.append(self.encryption_table[i % length].encrypt(letter))
+        def encrypt_letter(letter, index):
+            """Encrypts a single letter relative to its position
 
-        return ''.join(encrypted)
+            letter : single character
+            index : integer between 0 and length
+            """
+            if len(letter) != 1:
+                raise CaesarError("Only a sigle character must be given.")
+            if not ord('A') <= letter <= ord('Z'):
+                raise CaesarError("`letter` must be a capital letter.")
+
+            return self.encryption_table[index % length].encrypt(letter)
+
+        return [encrypt_letter(letter, index) for
+                index, letter in enumerate(utils.fix_text(text))]
 
     def decrypt(self, text):
-        """Decrypts text"""
-        fixed_text = re.sub('[^A-Z]', '', text.upper())
-        decrypted = []
+        """Decrypts text
+
+        text : string
+        """
         length = len(self.encryption_table)
 
-        for i, letter in enumerate(fixed_text):
-            decrypted.append(self.encryption_table[i % length].decrypt(letter))
+        def decrypt_letter(letter, index):
+            """Encrypts a single letter relative to its position
 
-        return ''.join(decrypted)
+            letter : single character
+            index : integer between 0 and length
+            """
+            if len(letter) != 1:
+                raise CaesarError("Only a sigle character must be given.")
+            if not ord('A') <= letter <= ord('Z'):
+                raise CaesarError("`letter` must be a capital letter.")
+
+            return self.encryption_table[index % length].decrypt(letter)
+
+        return [decrypt_letter(letter, index) for
+                index, letter in enumerate(utils.fix_text(text))]
 
 
 class PlayfairError(CipherError):
@@ -195,28 +204,31 @@ class Playfair(Cipher):
     ]
 
     def __init__(self, password, omission_rule=0, double_padding='X',
-                 end_padding='X'):
-        """omission_rule determines which omission rule you want to use
-        (go figure). See the list at the beginning of the constructor
+                 end_padding='Z'):
+        """omission_rule determines which omission rule you want to use.
+        See the list at the beginning of the constructor
+
         double_padding determines what letter you would like to use to pad
         a digraph that is double letters
+
         end_padding determines what letter you would like to use to pad
-        the end of an text containing an odd number of letters"""
-        super(Playfair, self).__init__(password)
-
-        self.password = None
-        self.grid = None
-        self.omission_rule = None
-        self.double_padding = None
-        self.end_padding = None
-
-        self.set_parameters(
-            omission_rule=omission_rule, password=password,
-            double_padding=double_padding, end_padding=end_padding
-            )
+        the end of an text containing an odd number of letters
+        """
+        if omission_rule >= 0 and omission_rule < len(self.omission_rules):
+            self.omission_rule = omission_rule
+        else:
+            raise PlayfairError('omission_rule values must be \
+between 0 and ' + (len(self.omission_rules) - 1) + '.')
+        self.password = utils.fix_text(password)
+        self.grid = self._generate_grid()
+        self.double_padding = self._check_padding(double_padding, 'double')
+        self.end_padding = self._check_padding(end_padding, 'end')
 
     def _check_padding(self, padding, which_pad):
-        """make sure the text for the padding character is valid"""
+        """Makes sure the text for the padding character is valid
+
+        padding : character
+        which_pad : str used for debugging reasons"""
         if len(padding) != 1:
             raise PlayfairError('The ' + which_pad + ' padding \
 must be a single character.')
@@ -249,7 +261,7 @@ must not be omitted by the omission rule.')
 been configured properly.')
 
     def _get_alphabet(self):
-        """returns the alphabet used by the cipher
+        """Returns the alphabet used by the cipher
         (takes into account the omission rule)"""
         full_alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         alphabet = ''
@@ -262,11 +274,9 @@ been configured properly.')
         return alphabet
 
     def _generate_grid(self):
-        """generates the 25 character grid based on the omission rule
-        and the given password"""
-        if self.password is None:
-            raise PlayfairError("""No password set. Do not use this function.
-Instead use set_password(password)""")
+        """Generates the 25 character grid based on the omission rule
+        and the given password
+        """
         grid = ''
         alphabet = self._get_alphabet()
 
@@ -281,7 +291,10 @@ Instead use set_password(password)""")
         return grid
 
     def _generate_digraphs(self, text):
-        """splits the text text into digraphs"""
+        """Splits the text `text` into digraphs
+
+        text : str
+        """
         text = re.sub('[^A-Z]', '', text.upper())
         text_fixed = ''
 
@@ -391,43 +404,16 @@ only uppercase letters of the alphabet.')
         return first_letter + second_letter
 
     def encrypt(self, text):
-        """encrypts text"""
-        if self.grid is None:
-            raise PlayfairError("No password has been specified")
-        encrypted_digraphs = []
+        """Encrypts text
 
-        for digraph in self._generate_digraphs(text):
-            encrypted_digraphs.append(self._encrypt_digraph(digraph))
-
-        return ''.join(encrypted_digraphs)
+        text : str"""
+        return ''.join([self._encrypt_digraph(digraph) for digraph in
+                       self._generate_digraphs(utils.fix_text(text))])
 
     def decrypt(self, text):
-        """decrypts text"""
-        if self.grid is None:
-            raise PlayfairError("No password has been specified")
-        decrypted_digraphs = []
+        """Decrypts text
 
-        for digraph in self._generate_digraphs(text):
-            decrypted_digraphs.append(self._decrypt_digraph(digraph))
-
-        return ''.join(decrypted_digraphs)
-
-    def set_parameters(self, **kwargs):
-        """sets the parameters for upcoming encryptions and decryptions"""
-        for key, value in kwargs.iteritems():
-            if key == 'password':
-                self.password = re.sub('[^A-Z]', '', value.upper())
-                self.grid = self._generate_grid()
-            elif key == 'double_padding':
-                self.double_padding = self._check_padding(value, 'double')
-            elif key == 'end_padding':
-                self.end_padding = self._check_padding(value, 'end')
-            elif key == 'omission_rule':
-                if value >= 0 and value < len(self.omission_rules):
-                    self.omission_rule = value
-                else:
-                    raise PlayfairError('omission_rule values must be \
-between 0 and ' + (len(self.omission_rules) - 1))
-            else:
-                raise PlayfairError('Unknown parameter ' + key + ' with value '
-                                    + value)
+        text : str
+        """
+        return ''.join([self._decrypt_digraph(digraph) for digraph in
+                       self._generate_digraphs(utils.fix_text(text))])
