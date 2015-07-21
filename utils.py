@@ -32,6 +32,13 @@ fix_text:
     Parameters
     ----------
     text : str
+
+is_letter:
+    Checks if its arguement is a single capital English letter
+
+    Parameters
+    ----------
+    letter : str
 """
 
 
@@ -73,3 +80,14 @@ def fix_text(text):
     text : str
     """
     return re.sub('[^A-Z]', '', text.upper())
+
+
+def is_letter(letter):
+    """Checks if its arguement is a single capital English letter"""
+    if type(letter) is not str:
+        return False
+    if len(letter) != 1:
+        return False
+    if not ord('A') <= ord(letter) <= ord('Z'):
+        return False
+    return True
