@@ -6,6 +6,7 @@ Thus far I have added the following ciphers:
 2. Vigenere Cipher
 3. Playfair Cipher
 4. One-Time Pad Cipher
+5. Skytale Cipher
 
 Each cipher is called as
 ```
