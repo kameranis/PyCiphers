@@ -23,6 +23,13 @@ import Caesar
 import random
 
 
+class OneTimePadError(Exception):
+    """One Time Pad Exception Class"""
+    def __init__(self, message):
+        super(OneTimePadError, self).__init__(message)
+        print message
+
+
 def encrypt(text, seed):
     """Encrypts text using the One-Time Pad cipher
 
@@ -31,7 +38,13 @@ def encrypt(text, seed):
     text : string
     seed : hashable
     """
-    random.seed(seed)
+    if type(text) is not str:
+        raise OneTimePadError('Can only encrypt strings.')
+    try:
+        random.seed(seed)
+    except TypeError:
+        raise OneTimePadError('Unhashable type: ' + str(type(seed))[7:-2] +
+'\nseed must be hashable.')
 
     return ''.join(Caesar.encrypt(letter, random.randint(0, 25))
                    for letter in utils.fix_text(text))
@@ -45,7 +58,13 @@ def decrypt(text, seed):
     text : string
     seed : hashable
     """
-    random.seed(seed)
+    if type(text) is not str:
+        raise OneTimePadError('Can only decrypt strings.')
+    try:
+        random.seed(seed)
+    except TypeError:
+        raise OneTimePadError('Unhashable type: ' + str(type(seed))[7:-2] +
+'\nseed must be hashable.')
 
     return ''.join(Caesar.decrypt(letter, random.randint(0, 25))
                    for letter in utils.fix_text(text))

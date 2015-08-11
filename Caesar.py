@@ -35,6 +35,8 @@ def encrypt(text, offset, factor=1):
 
     letter : character
     """
+    if type(text) is not str:
+        raise CaesarError('Can only encrypt strings.')
     offset = offset % 26
     if factor % 2 == 0 or factor % 13 == 0:
         raise CaesarError("factor value must not be divisible by 2 or 13.")
@@ -60,6 +62,8 @@ def decrypt(text, offset, factor=1):
 
     letter : character
     """
+    if type(text) is not str:
+        raise CaesarError('Can only decrypt strings.')
     offset = offset % 26
     if factor % 2 == 0 or factor % 13 == 0:
         raise CaesarError("factor value must not be divisible by 2 or 13.")

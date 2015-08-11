@@ -34,8 +34,14 @@ def encrypt(text, password):
 
     E(text[i]) = (text[i] + password[i]) % 26
 
-    text, password : string
+    text : string
+    password : string
     """
+    if type(text) is not str:
+        raise VigenereError('Can only encrypt strings.')
+    if type(password) is not str:
+        raise VigenereError('Password must be a string.')
+
     password = utils.fix_text(password)
 
     length = len(password)
@@ -52,6 +58,11 @@ def decrypt(text, password):
 
     text, password : string
     """
+    if type(text) is not str:
+        raise VigenereError('Can only decrypt strings.')
+    if type(password) is not str:
+        raise VigenereError('Password must be a string.')
+
     password = utils.fix_text(password)
 
     length = len(password)

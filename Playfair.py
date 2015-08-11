@@ -6,7 +6,7 @@ check_padding(padding, which_pad):
     which_pad is used for debugging reasons
 
     padding : character
-    which_pad : "double" | "end"
+    which_pad : "double" | "end" | "alternate end"
 
 generate_grid(password):
     Generates the grid in the form of a dictionary
@@ -23,6 +23,7 @@ generate_digraphs(text[, double_padding, end_padding]):
     text : string
     double_padding : character
     end_padding : character
+    alternate_end_pad : character
 
 encrypt(text, password[, double_padding, end_padding]):
     Encrypts text using the Playfair cipher
@@ -31,6 +32,7 @@ encrypt(text, password[, double_padding, end_padding]):
     password : string
     double_padding : character
     end_padding : character
+    alternate_end_pad : character
 
 decrypt(text, password[, double_padding, end_padding]):
     Decrypts text using the Playfair cipher
@@ -39,6 +41,7 @@ decrypt(text, password[, double_padding, end_padding]):
     password : string
     double_padding : character
     end_padding : character
+    alternate_end_pad : character
 """
 
 
@@ -57,6 +60,8 @@ def check_padding(padding, which_pad):
 
     padding : character
     which_pad : str used for debugging reasons"""
+    if type(padding) is not str:
+        raise PlayfairError('Padding must be a string.')
     if len(padding) != 1:
         raise PlayfairError('The ' + which_pad + ' padding \
 must be a single character.')
@@ -73,6 +78,8 @@ def generate_grid(password):
 
     password : string
     """
+    if type(password) is not str:
+        raise PlayfairError('Password must be a string.')
     alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
     grid = dict()
     rev_grid = dict()
@@ -96,7 +103,8 @@ def generate_grid(password):
     return grid, rev_grid
 
 
-def generate_digraphs(text, double_padding='X', end_padding='Z'):
+def generate_digraphs(text, double_padding='X', end_padding='Z',
+                      alternate_end_padding='Z'):
     """Splits the text into digraphs
 
     if a digraph consists of a double letter, double_padding is introduced
@@ -106,9 +114,12 @@ def generate_digraphs(text, double_padding='X', end_padding='Z'):
     text : string
     double_padding : character
     end_padding : character
+    alternate_end_padding : character
     """
     double_padding = check_padding(double_padding, "double")
     end_padding = check_padding(end_padding, "end")
+    alternate_end_padding = check_padding(
+            alternate_end_padding, "alternate end")
     text = utils.fix_text(text)
     text = text.replace('J', 'I')
 
@@ -117,7 +128,10 @@ def generate_digraphs(text, double_padding='X', end_padding='Z'):
     while counter < len(text):
         if counter + 1 == len(text):
             # we have reached the end of the text_fixed
-            yield text[counter] + end_padding
+            if text[counter] != end_padding:
+                yield text[counter] + end_padding
+            else:
+                yield text[counter] + alternate_end_padding
             break
         elif text[counter] != text[counter + 1]:
             # we just need to create a normal digraph
@@ -129,7 +143,8 @@ def generate_digraphs(text, double_padding='X', end_padding='Z'):
             counter += 1
 
 
-def encrypt(text, password, double_padding='X', end_padding='Z'):
+def encrypt(text, password, double_padding='X', end_padding='Z',
+            alternate_end_padding='X'):
     """Encrypts text using the Playfair cipher
 
     text : string
@@ -137,6 +152,9 @@ def encrypt(text, password, double_padding='X', end_padding='Z'):
     double_padding : character
     end_padding : character
     """
+    if type(text) is not str:
+        raise PlayfairError('Can only encrypt strings.')
+
     grid, rev_grid = generate_grid(password)
 
     def encrypt_digraph(digraph):
@@ -164,11 +182,12 @@ def encrypt(text, password, double_padding='X', end_padding='Z'):
 
         return first_encr + second_encr
 
-    return ''.join([encrypt_digraph(digraph) for digraph
-                    in generate_digraphs(text, double_padding, end_padding)])
+    return ''.join([encrypt_digraph(digraph) for digraph in generate_digraphs(
+                text, double_padding, end_padding, alternate_end_padding)])
 
 
-def decrypt(text, password, double_padding='X', end_padding='Z'):
+def decrypt(text, password, double_padding='X', end_padding='Z',
+            alternate_end_padding='X'):
     """Decrypts text using the Playfair cipher
 
     text : string
@@ -176,6 +195,9 @@ def decrypt(text, password, double_padding='X', end_padding='Z'):
     double_padding : character
     end_padding : character
     """
+    if type(text) is not str:
+        raise PlayfairError('Can only encrypt strings.')
+
     grid, rev_grid = generate_grid(password)
 
     def decrypt_digraph(digraph):
@@ -203,5 +225,5 @@ def decrypt(text, password, double_padding='X', end_padding='Z'):
 
         return first_encr + second_encr
 
-    return ''.join([decrypt_digraph(digraph) for digraph
-                    in generate_digraphs(text, double_padding, end_padding)])
+    return ''.join([decrypt_digraph(digraph) for digraph in generate_digraphs(
+                text, double_padding, end_padding, alternate_end_padding)])

@@ -32,6 +32,10 @@ def encrypt(text, size):
     text : string
     size : int < len(text)
     """
+    if type(text) is not str:
+        raise SkytaleError('Can only encrypt strings.')
+    if type(size) is not int:
+        raise SkytaleError('size must be int.')
     if not size < len(text):
         raise SkytaleError("the size of each collumn must be less than the \
 length of the text to be encrypted")
@@ -54,6 +58,10 @@ def decrypt(text, size):
     text : string
     size : int < len(text)
     """
+    if type(text) is not str:
+        raise SkytaleError('Can only decrypt strings.')
+    if type(size) is not int:
+        raise SkytaleError('size must be int.')
     if not size < len(text):
         raise SkytaleError("the size of each collumn must be less than the \
 length of the text to be encrypted")
