@@ -1,26 +1,25 @@
 """One-Time Pad cipher
 
-encrypt(text, seed):
+encrypt(text, key):
     Encrypts text using the One-Time Pad cipher
 
-    E(x) = Caesar.encrypt(x, random) % 26
+    E(x) = Vigenere.encrypt(text, key)
 
     text : string
-    seed : hashable
+    key : string
 
-decrypt(text, offset[, factor]):
+decrypt(text, key):
     Decrypts text using the One-Time Pad cipher
 
-    D(x) = Caesar.decrypt(x, random) % 26
+    D(x) = Vigenere.decrypt(text, key)
 
     text : string
-    seed : hashable
+    key : string
 """
 
 
 import utils
-import Caesar
-import random
+import Vigenere
 
 
 class OneTimePadError(Exception):
@@ -30,41 +29,37 @@ class OneTimePadError(Exception):
         print message
 
 
-def encrypt(text, seed):
+def encrypt(text, key):
     """Encrypts text using the One-Time Pad cipher
 
-    E(x) = Caesar.encrypt(x, random)
+    E(x) = Vigenere.encrypt(text, key)
 
     text : string
-    seed : hashable
+    key : string
     """
     if type(text) is not str:
         raise OneTimePadError('Can only encrypt strings.')
-    try:
-        random.seed(seed)
-    except TypeError:
-        raise OneTimePadError('Unhashable type: ' + str(type(seed))[7:-2] +
-'\nseed must be hashable.')
+    if type(key) is not str:
+        raise OneTimePadError('key must be a string.')
+    if len(key) < len(text):
+        raise OneTimePadError('key must be at least the same length as text.')
 
-    return ''.join(Caesar.encrypt(letter, random.randint(0, 25))
-                   for letter in utils.fix_text(text))
+    return Vigenere.encrypt(utils.fix_text(text), utils.fix_text(key))
 
 
-def decrypt(text, seed):
+def decrypt(text, key):
     """Decrypts text using the One-Time Pad cipher
 
-    D(x) = Caesar.decrypt(x, random)
+    D(x) = Vigenere.decrypt(text, key)
 
     text : string
-    seed : hashable
+    key : string
     """
     if type(text) is not str:
-        raise OneTimePadError('Can only decrypt strings.')
-    try:
-        random.seed(seed)
-    except TypeError:
-        raise OneTimePadError('Unhashable type: ' + str(type(seed))[7:-2] +
-'\nseed must be hashable.')
+        raise OneTimePadError('Can only encrypt strings.')
+    if type(key) is not str:
+        raise OneTimePadError('key must be a string.')
+    if len(key) < len(text):
+        raise OneTimePadError('key must be at least the same length as text.')
 
-    return ''.join(Caesar.decrypt(letter, random.randint(0, 25))
-                   for letter in utils.fix_text(text))
+    return Vigenere.decrypt(utils.fix_text(text), utils.fix_text(key))

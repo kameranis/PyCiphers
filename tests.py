@@ -83,20 +83,24 @@ class TestOneTimePad(unittest.TestCase):
     def test_encrypt(self):
         """Tests encrypt function for One Time Pad cipher"""
         self.assertEqual(
-                ALPHABET, OTP.decrypt(OTP.encrypt(ALPHABET, OTP), OTP))
+                ALPHABET, OTP.decrypt(OTP.encrypt(ALPHABET, ALPHABET), ALPHABET))
         with self.assertRaises(OTP.OneTimePadError):
             OTP.encrypt(521, OTP)
         with self.assertRaises(OTP.OneTimePadError):
-            OTP.encrypt(ALPHABET, range(5))
+            OTP.encrypt(ALPHABET, OTP)
+        with self.assertRaises(OTP.OneTimePadError):
+            OTP.encrypt(ALPHABET, ALPHABET[:-1])
 
     def test_decrypt(self):
         """Tests decrypt function for One Time Pad cipher"""
         self.assertEqual(
-                ALPHABET, OTP.decrypt(OTP.encrypt(ALPHABET, OTP), OTP))
+                ALPHABET, OTP.decrypt(OTP.encrypt(ALPHABET, ALPHABET), ALPHABET))
         with self.assertRaises(OTP.OneTimePadError):
             OTP.decrypt(521, OTP)
         with self.assertRaises(OTP.OneTimePadError):
-            OTP.decrypt(ALPHABET, range(5))
+            OTP.encrypt(ALPHABET, OTP)
+        with self.assertRaises(OTP.OneTimePadError):
+            OTP.encrypt(ALPHABET, ALPHABET[:-1])
 
 
 class TestPlayfair(unittest.TestCase):

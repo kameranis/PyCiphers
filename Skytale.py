@@ -41,7 +41,7 @@ def encrypt(text, size):
 length of the text to be encrypted")
 
     text = utils.fix_text(text)
-    width = int(math.ceil(len(text) / size))
+    width = int(math.ceil(len(text) / float(size)))
     skytale = np.array(['0'] * width * size).reshape(size, width)
     for i, letter in enumerate(text):
         skytale[i % size, i / size] = letter
